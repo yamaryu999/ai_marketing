@@ -1,0 +1,5 @@
+{
+  "name": "AI Morning Stock Briefing & Analyzer",
+  "description": "An AI-powered app that automatically fetches and summarizes the latest morning stock news, plus a tool for analyzing specific earnings reports.",
+  "requestFramePermissions": []
+}
