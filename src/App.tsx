@@ -108,7 +108,7 @@ export default function App() {
 `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
@@ -120,9 +120,13 @@ export default function App() {
       } else {
         throw new Error('AIからの応答が空でした。');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Briefing error:', err);
-      setBriefingError('ニュースの取得に失敗しました。時間をおいて再試行してください。');
+      if (err?.message?.includes('429') || err?.message?.includes('quota')) {
+        setBriefingError('APIの利用制限（クォータ）に達しました。しばらく時間をおいてから再度お試しください。');
+      } else {
+        setBriefingError('ニュースの取得に失敗しました。時間をおいて再試行してください。');
+      }
     } finally {
       setIsFetchingBriefing(false);
     }
@@ -184,9 +188,13 @@ ${inputText}
       } else {
         throw new Error('AIからの応答が空でした。');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Analysis error:', err);
-      setAnalyzerError('分析中にエラーが発生しました。テキストを短くするか、しばらく経ってから再度お試しください。');
+      if (err?.message?.includes('429') || err?.message?.includes('quota')) {
+        setAnalyzerError('APIの利用制限（クォータ）に達しました。しばらく時間をおいてから再度お試しください。');
+      } else {
+        setAnalyzerError('分析中にエラーが発生しました。テキストを短くするか、しばらく経ってから再度お試しください。');
+      }
     } finally {
       setIsAnalyzing(false);
     }
