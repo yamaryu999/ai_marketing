@@ -52,6 +52,12 @@ interface BriefingResult {
 // Helper to safely parse JSON from AI response (handles markdown code blocks)
 const parseJSONResponse = (text: string) => {
   try {
+    const start = text.indexOf('{');
+    const end = text.lastIndexOf('}');
+    if (start !== -1 && end !== -1 && end > start) {
+      const jsonStr = text.substring(start, end + 1);
+      return JSON.parse(jsonStr);
+    }
     const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(cleanedText);
   } catch (e) {
@@ -85,6 +91,20 @@ export default function App() {
       const prompt = `
 本日の最新の重要な経済・株式ニュース（日本市場および米国市場）をGoogle検索で調査し、投資家向けの朝刊ブリーフィングを作成してください。
 トップニュースを3〜5つピックアップし、それぞれの市場への影響（Bullish/Bearish/Neutral）を評価してください。
+
+以下のJSONフォーマットで出力してください。Markdownのコードブロック（\`\`\`json ... \`\`\`）で囲んでください。
+{
+  "overallSentiment": "Bullish, Bearish, または Neutral のいずれか",
+  "marketSummary": "今日の市場全体の動向と注目のポイント（2〜3文）",
+  "newsItems": [
+    {
+      "headline": "ニュースの見出し",
+      "summary": "ニュースの要約",
+      "impact": "Bullish, Bearish, または Neutral のいずれか",
+      "source": "情報源（例: 日経新聞, Bloombergなど）"
+    }
+  ]
+}
 `;
 
       const response = await ai.models.generateContent({
@@ -92,34 +112,6 @@ export default function App() {
         contents: prompt,
         config: {
           tools: [{ googleSearch: {} }],
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              overallSentiment: {
-                type: Type.STRING,
-                description: 'Bullish, Bearish, or Neutral',
-              },
-              marketSummary: {
-                type: Type.STRING,
-                description: '今日の市場全体の動向と注目のポイント（2〜3文）',
-              },
-              newsItems: {
-                type: Type.ARRAY,
-                items: {
-                  type: Type.OBJECT,
-                  properties: {
-                    headline: { type: Type.STRING },
-                    summary: { type: Type.STRING },
-                    impact: { type: Type.STRING, description: 'Bullish, Bearish, or Neutral' },
-                    source: { type: Type.STRING, description: '情報源（例: 日経新聞, Bloombergなど）' },
-                  },
-                  required: ['headline', 'summary', 'impact', 'source'],
-                },
-              },
-            },
-            required: ['overallSentiment', 'marketSummary', 'newsItems'],
-          },
         },
       });
 
